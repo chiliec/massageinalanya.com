@@ -2,3 +2,6 @@ node_modules
 .next
 .env*
 data/*
+.next
+next-env.d.ts
+.next
