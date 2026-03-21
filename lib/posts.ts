@@ -25,20 +25,29 @@ export type Post = {
   updatedAt: string;
 };
 
-const POSTS_PATH = path.join(process.cwd(), "data", "posts.json");
+const DEFAULT_POSTS_PATH = path.join(process.cwd(), "data", "posts.json");
+
+function getPostsPath() {
+  const override = process.env.POSTS_FILE_PATH?.trim();
+  if (override) {
+    return path.isAbsolute(override) ? override : path.join(process.cwd(), override);
+  }
+  return DEFAULT_POSTS_PATH;
+}
 
 async function ensurePostsFile() {
-  await fs.mkdir(path.dirname(POSTS_PATH), { recursive: true });
+  const postsPath = getPostsPath();
+  await fs.mkdir(path.dirname(postsPath), { recursive: true });
   try {
-    await fs.access(POSTS_PATH);
+    await fs.access(postsPath);
   } catch {
-    await fs.writeFile(POSTS_PATH, "[]", "utf8");
+    await fs.writeFile(postsPath, "[]", "utf8");
   }
 }
 
 async function readPosts(): Promise<Post[]> {
   await ensurePostsFile();
-  const raw = await fs.readFile(POSTS_PATH, "utf8");
+  const raw = await fs.readFile(getPostsPath(), "utf8");
   try {
     const data = JSON.parse(raw);
     return Array.isArray(data) ? (data as Post[]) : [];
@@ -49,7 +58,7 @@ async function readPosts(): Promise<Post[]> {
 
 async function writePosts(posts: Post[]) {
   await ensurePostsFile();
-  await fs.writeFile(POSTS_PATH, JSON.stringify(posts, null, 2), "utf8");
+  await fs.writeFile(getPostsPath(), JSON.stringify(posts, null, 2), "utf8");
 }
 
 function stripHtml(value: string) {
