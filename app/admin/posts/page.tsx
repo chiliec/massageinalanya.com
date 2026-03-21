@@ -1,15 +1,24 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/auth/sign-out-button";
+import PostEditor from "@/components/posts/post-editor";
+import { listPosts } from "@/lib/posts";
 
-export default async function AdminPage() {
+function formatDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(date);
+}
+
+export default async function AdminPostsPage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/auth/login?next=/admin");
+    redirect("/auth/login?next=/admin/posts");
   }
 
   const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
@@ -37,6 +46,8 @@ export default async function AdminPage() {
     );
   }
 
+  const posts = await listPosts();
+
   return (
     <div className="flex min-h-screen items-start justify-center bg-zinc-50 px-6 py-12 text-zinc-900 dark:bg-black dark:text-zinc-50">
       <main className="w-full max-w-4xl space-y-6">
@@ -46,7 +57,7 @@ export default async function AdminPage() {
           </p>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-semibold">Welcome back</h1>
+              <h1 className="text-3xl font-semibold">Post editor</h1>
               <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
                 Signed in as <span className="font-medium">{user.email ?? "unknown"}</span>.
               </p>
@@ -55,21 +66,37 @@ export default async function AdminPage() {
           </div>
         </header>
 
+        <PostEditor />
+
         <section className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-          <h2 className="text-lg font-semibold">Admin tools</h2>
+          <h2 className="text-lg font-semibold">Published posts</h2>
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-            This section is ready for admin-only controls and content management.
+            These are visible at <span className="font-medium">/posts</span>.
           </p>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl border border-dashed border-zinc-200 p-4 text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-              Add booking controls
-            </div>
-            <a
-              href="/admin/posts"
-              className="rounded-2xl border border-dashed border-zinc-200 p-4 text-sm font-medium text-zinc-700 transition hover:border-zinc-300 hover:text-zinc-900 dark:border-zinc-800 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:text-zinc-50"
-            >
-              Manage blog posts
-            </a>
+          <div className="mt-6 space-y-3">
+            {posts.length === 0 ? (
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">No posts yet.</p>
+            ) : (
+              posts.map((post) => (
+                <div
+                  key={post.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-dashed border-zinc-200 px-4 py-3 text-sm text-zinc-600 dark:border-zinc-800 dark:text-zinc-300"
+                >
+                  <div>
+                    <p className="font-medium text-zinc-900 dark:text-zinc-50">{post.title}</p>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {formatDate(post.createdAt)} · /posts/{post.slug}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/posts/${post.slug}`}
+                    className="text-sm font-semibold text-zinc-900 underline-offset-4 hover:underline dark:text-zinc-50"
+                  >
+                    View
+                  </Link>
+                </div>
+              ))
+            )}
           </div>
         </section>
       </main>
