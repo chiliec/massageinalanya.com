@@ -17,22 +17,31 @@ export default function GoogleSignInButton({
     setIsLoading(true);
     setError(null);
 
-    const supabase = createClient();
-    const redirectUrl = new URL("/auth/callback", window.location.origin);
+    try {
+      const supabase = createClient();
+      const redirectUrl = new URL("/auth/callback", window.location.origin);
 
-    if (nextPath && nextPath.startsWith("/")) {
-      redirectUrl.searchParams.set("next", nextPath);
-    }
+      if (nextPath && nextPath.startsWith("/")) {
+        redirectUrl.searchParams.set("next", nextPath);
+      }
 
-    const { error: signInError } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: redirectUrl.toString(),
-      },
-    });
+      const { error: signInError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirectUrl.toString(),
+        },
+      });
 
-    if (signInError) {
-      setError(signInError.message);
+      if (signInError) {
+        setError(signInError.message);
+      }
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to start Google sign-in."
+      );
+    } finally {
       setIsLoading(false);
     }
   };
