@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type EditorJS from "@editorjs/editorjs";
+import { ToolConstructable } from "@editorjs/editorjs";
 import { slugify } from "@/lib/slug";
 
 type Message = {
@@ -34,7 +35,7 @@ export default function PostEditor() {
         placeholder: "Write your post...",
         tools: {
           header: {
-            class: HeaderModule.default,
+            class: HeaderModule.default as unknown as ToolConstructable,
             inlineToolbar: true,
             config: {
               levels: [2, 3, 4],
@@ -42,7 +43,7 @@ export default function PostEditor() {
             },
           },
           list: {
-            class: ListModule.default,
+            class: ListModule.default as unknown as ToolConstructable,
             inlineToolbar: true,
           },
         },

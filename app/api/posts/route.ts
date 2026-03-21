@@ -1,6 +1,21 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createPost } from "@/lib/posts";
+import { createPost, type EditorContent } from "@/lib/posts";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isEditorContent(value: unknown): value is EditorContent {
+  if (!isRecord(value)) return false;
+  const blocks = value.blocks;
+  if (!Array.isArray(blocks)) return false;
+  return blocks.every((block) => {
+    if (!isRecord(block)) return false;
+    if (typeof block.type !== "string") return false;
+    return isRecord(block.data);
+  });
+}
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -42,17 +57,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Title is required." }, { status: 400 });
   }
 
-  if (!content || typeof content !== "object") {
-    return NextResponse.json({ error: "Content is required." }, { status: 400 });
-  }
-
-  if (!Array.isArray((content as { blocks?: unknown }).blocks)) {
+  if (!isEditorContent(content)) {
     return NextResponse.json({ error: "Content blocks are required." }, { status: 400 });
   }
 
   const post = await createPost({
     title: trimmedTitle,
-    content: content as { blocks: unknown[] },
+    content,
   });
 
   return NextResponse.json({ post });
