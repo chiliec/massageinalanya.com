@@ -7,8 +7,7 @@ export default function About() {
         </h2>
 
         <p className="opacity-80 leading-relaxed">
-          We provide high-quality massage therapy combining modern techniques
-          and traditional healing practices.
+          Clinical Manual Therapy, Applied Kinesiology, and Osteopathic Techniques. Restoring your freedom of movement without drugs or surgery.
         </p>
       </div>
     </section>

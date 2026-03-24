@@ -1,15 +1,15 @@
 const services = [
   {
-    title: "Relax Massage",
-    desc: "Full body relaxation therapy",
+    title: "Applied Kinesiology",
+    desc: "Diagnostic functional muscle testing",
   },
   {
-    title: "Medical Massage",
-    desc: "Targeted muscle recovery",
+    title: "Therapeutic & Sports Massage",
+    desc: "Deep tissue work targeting trigger points and myofascial restrictions.",
   },
   {
-    title: "Aromatherapy",
-    desc: "Essential oils treatment",
+    title: "Osteopathic Techniques",
+    desc: "Gentle yet deep work with the body’s structures (bones, ligaments, internal organs).",
   },
 ];
 
