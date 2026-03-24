@@ -14,6 +14,7 @@ export default function About() {
               src="/images/about-large.webp"
               alt="Larisa performing clinical therapy"
               fill
+              sizes="(max-width: 1023px) 100vw, 564px"
               className="object-cover"
             />
           </div>

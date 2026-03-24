@@ -59,6 +59,7 @@ export default function Problems() {
               src="/images/about-portrait.webp"
               alt="Larisa"
               fill
+              sizes="325px"
               className="object-cover"
             />
           </div>
@@ -85,7 +86,7 @@ export default function Problems() {
           <div key={c.title} className={`${c.offset} lg:${c.offset}`}>
             <div className="bg-cream-light rounded-[20px] p-6 flex flex-col items-center text-center border-t-2 border-brown/10">
               <div className="w-[99px] h-[99px] rounded-full overflow-hidden relative mb-6">
-                <Image src={c.icon} alt={c.title} fill className="object-cover" />
+                <Image src={c.icon} alt={c.title} fill sizes="99px" className="object-cover" />
               </div>
               <h3 className="font-serif text-[32px] leading-tight text-brown mb-4">
                 {c.title}

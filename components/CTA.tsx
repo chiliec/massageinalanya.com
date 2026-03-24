@@ -12,6 +12,7 @@ export default function CTA() {
         src="/images/cta-background.webp"
         alt="Massage therapy environment"
         fill
+        sizes="100vw"
         className="object-cover"
       />
 

@@ -73,6 +73,7 @@ export default function Treatments() {
                 src={t.image}
                 alt={t.title}
                 fill
+                sizes="390px"
                 className="object-cover"
               />
             </div>
