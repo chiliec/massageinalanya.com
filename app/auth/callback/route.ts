@@ -10,25 +10,29 @@ export async function GET(request: Request) {
     next = "/";
   }
 
+  // Build the redirect base URL — prefer x-forwarded-host in production
+  // so the redirect goes to the real domain, not the internal origin.
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const isLocalEnv = process.env.NODE_ENV === "development";
+  let baseUrl = origin;
+  if (!isLocalEnv && forwardedHost) {
+    baseUrl = `https://${forwardedHost}`;
+  }
+
   if (code) {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    try {
+      const supabase = await createClient();
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error) {
-      const forwardedHost = request.headers.get("x-forwarded-host");
-      const isLocalEnv = process.env.NODE_ENV === "development";
-
-      if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${next}`);
+      if (!error) {
+        return NextResponse.redirect(`${baseUrl}${next}`);
       }
 
-      if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`);
-      }
-
-      return NextResponse.redirect(`${origin}${next}`);
+      console.error("[auth/callback] exchangeCodeForSession error:", error.message);
+    } catch (err) {
+      console.error("[auth/callback] Unexpected error:", err);
     }
   }
 
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+  return NextResponse.redirect(`${baseUrl}/auth/auth-code-error`);
 }

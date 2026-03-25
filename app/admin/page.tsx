@@ -1,20 +1,23 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/auth/sign-out-button";
+import { isDevMode, isDevAuthenticated } from "@/lib/dev-auth";
 
 export default async function AdminPage() {
+  const devAuth = isDevMode() && (await isDevAuthenticated());
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
+  if (!user && !devAuth) {
     redirect("/auth/login?next=/admin");
   }
 
   const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-  const userEmail = user.email?.toLowerCase();
-  const isAdmin = Boolean(adminEmail && userEmail && userEmail === adminEmail);
+  const userEmail = user?.email?.toLowerCase();
+  const isAdmin = devAuth || Boolean(adminEmail && userEmail && userEmail === adminEmail);
 
   if (!isAdmin) {
     return (
@@ -25,7 +28,7 @@ export default async function AdminPage() {
           </p>
           <h1 className="mt-4 text-3xl font-semibold">Access denied</h1>
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-            Signed in as <span className="font-medium">{user.email ?? "unknown"}</span>.
+            Signed in as <span className="font-medium">{user?.email ?? "unknown"}</span>.
             Only <span className="font-medium">{adminEmail ?? "the configured admin"}</span>{" "}
             can view this page.
           </p>
@@ -48,10 +51,21 @@ export default async function AdminPage() {
             <div>
               <h1 className="text-3xl font-semibold">Welcome back</h1>
               <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-                Signed in as <span className="font-medium">{user.email ?? "unknown"}</span>.
+                Signed in as <span className="font-medium">{user?.email ?? (devAuth ? "dev-admin" : "unknown")}</span>.
               </p>
             </div>
-            <SignOutButton />
+            {devAuth && !user ? (
+              <form action="/auth/dev-logout" method="POST">
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center rounded-full border border-black/10 px-4 py-2 text-sm font-medium transition hover:border-black/20 hover:bg-black/5 dark:border-white/20 dark:hover:border-white/30 dark:hover:bg-white/10"
+                >
+                  Sign out
+                </button>
+              </form>
+            ) : (
+              <SignOutButton />
+            )}
           </div>
         </header>
 

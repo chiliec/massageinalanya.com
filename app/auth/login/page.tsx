@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import GoogleSignInButton from "./google-sign-in-button";
+import DevLoginButton from "./dev-login-button";
 import SignOutButton from "@/components/auth/sign-out-button";
+import { isDevMode, isDevAuthenticated } from "@/lib/dev-auth";
 
 type LoginPageSearchParams = {
   next?: string | string[];
@@ -20,6 +22,11 @@ export default async function LoginPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // In dev mode, a dev-admin cookie also grants access
+  if (isDevMode() && (await isDevAuthenticated())) {
+    redirect("/admin");
+  }
 
   const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
   const userEmail = user?.email?.toLowerCase();
@@ -55,13 +62,22 @@ export default async function LoginPage({
                 </div>
               </div>
             ) : (
-              <GoogleSignInButton nextPath={nextPath ?? "/admin"} />
+              <>
+                <GoogleSignInButton nextPath={nextPath ?? "/admin"} />
+                {isDevMode() && <DevLoginButton />}
+              </>
             )}
           </div>
 
-          <p className="mt-6 text-xs text-zinc-500 dark:text-zinc-400">
-            You’ll be redirected to Google to complete authentication.
-          </p>
+          {isDevMode() ? (
+            <p className="mt-6 text-xs text-zinc-500 dark:text-zinc-400">
+              Dev mode: use the dev login button to skip Google OAuth.
+            </p>
+          ) : (
+            <p className="mt-6 text-xs text-zinc-500 dark:text-zinc-400">
+              You’ll be redirected to Google to complete authentication.
+            </p>
+          )}
         </div>
       </main>
     </div>
