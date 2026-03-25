@@ -1,24 +1,23 @@
-const menuLinks = [
-  { label: "Treatments", href: "#treatments" },
-  { label: "About", href: "#about" },
-  { label: "Reviews", href: "#reviews" },
-  { label: "Contact", href: "#contact" },
-];
+import type { Locale } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 
-const treatmentLinks = [
-  "Applied Kinesiology",
-  "Osteopathic Techniques",
-  "Therapeutic & Sports Massage",
-  "Specialized Aesthetics",
-];
+export default function Footer({ locale = "en" }: { locale?: Locale }) {
+  const nav = t("nav", locale);
+  const f = t("footer", locale);
 
-export default function Footer() {
+  const menuLinks = [
+    { label: nav.treatments, href: "#treatments" },
+    { label: nav.about, href: "#about" },
+    { label: nav.reviews, href: "#reviews" },
+    { label: nav.contact, href: "#contact" },
+  ];
+
   return (
     <footer className="bg-brown text-gold px-6 lg:px-[150px] pt-20 pb-10 overflow-hidden">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
         {/* Menu column */}
         <div>
-          <p className="text-sm font-medium uppercase text-cream mb-4">Menu</p>
+          <p className="text-sm font-medium uppercase text-cream mb-4">{f.menuLabel}</p>
           <ul className="flex flex-col gap-2">
             {menuLinks.map((l) => (
               <li key={l.label}>
@@ -36,16 +35,16 @@ export default function Footer() {
         {/* Treatments column */}
         <div>
           <p className="text-sm font-medium uppercase text-cream mb-4">
-            treatments
+            {f.treatmentsLabel}
           </p>
           <ul className="flex flex-col gap-2">
-            {treatmentLinks.map((t) => (
-              <li key={t}>
+            {f.treatmentLinks.map((label) => (
+              <li key={label}>
                 <a
                   href="#treatments"
                   className="text-2xl font-medium hover:opacity-70 transition-opacity"
                 >
-                  {t}
+                  {label}
                 </a>
               </li>
             ))}
@@ -55,7 +54,7 @@ export default function Footer() {
         {/* Information column */}
         <div>
           <p className="text-sm font-medium uppercase text-cream mb-4">
-            information
+            {f.infoLabel}
           </p>
           <ul className="flex flex-col gap-2">
             <li className="text-2xl font-medium">
@@ -83,16 +82,16 @@ export default function Footer() {
 
       {/* Large logo */}
       <div className="relative">
-        <p className="font-logo text-[80px] md:text-[200px] lg:text-[300px] xl:text-[400px] leading-none text-gold select-none text-center overflow-hidden whitespace-nowrap">
+        <p className="font-logo text-[clamp(80px,21vw,400px)] leading-none text-gold select-none text-center whitespace-nowrap w-fit mx-auto">
           LARISA.
         </p>
       </div>
 
       {/* Bottom bar */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-4 text-sm font-medium text-cream">
-        <span>&copy; 2026, All Rights Reserved</span>
+        <span>{f.copyright}</span>
         <a href="/privacy" className="hover:opacity-70 transition-opacity">
-          privat policy
+          {f.privacy}
         </a>
       </div>
     </footer>

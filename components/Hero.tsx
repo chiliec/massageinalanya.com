@@ -2,9 +2,14 @@ import { getWhatsAppLink } from "@/lib/whatsapp";
 import Image from "next/image";
 import Link from "next/link";
 import Star from "./Star";
+import LanguageSwitcher from "./LanguageSwitcher";
+import type { Locale } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 
-export default function Hero() {
+export default function Hero({ locale = "en" }: { locale?: Locale }) {
   const link = getWhatsAppLink();
+  const nav = t("nav", locale);
+  const hero = t("hero", locale);
 
   return (
     <section className="bg-gold">
@@ -25,25 +30,20 @@ export default function Hero() {
         <div className="hidden md:flex items-center gap-6 lg:gap-12 xl:gap-16">
           <div className="flex items-center gap-6 lg:gap-12 xl:gap-16 text-sm font-medium uppercase tracking-wide text-brown">
             <a href="#treatments" className="hover:opacity-70 transition-opacity">
-              Treatments
+              {nav.treatments}
             </a>
             <a href="#about" className="hover:opacity-70 transition-opacity">
-              About
+              {nav.about}
             </a>
             <a href="#reviews" className="hover:opacity-70 transition-opacity">
-              Reviews
+              {nav.reviews}
             </a>
             <a href="#contact" className="hover:opacity-70 transition-opacity">
-              Contact
+              {nav.contact}
             </a>
           </div>
 
-          <div className="flex items-center gap-2 border border-brown/20 rounded-full px-4 py-2">
-            <span className="text-sm font-medium text-brown">EN</span>
-            <svg width="15" height="8" viewBox="0 0 15 8" fill="none" className="text-brown">
-              <path d="M1 1L7.5 7L14 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
+          <LanguageSwitcher locale={locale} />
         </div>
       </nav>
 
@@ -52,17 +52,15 @@ export default function Hero() {
         {/* Left column — text on gold */}
         <div className="flex flex-col gap-6 sm:gap-8 px-6 sm:px-10 lg:px-[150px] py-10 lg:py-16 xl:py-20">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[56px] xl:text-[70px] leading-[1.05] font-medium tracking-tight lg:tracking-[-2.8px] text-brown">
-            Professional Pain Relief & Functional Body Restoration
+            {hero.heading}
           </h1>
 
           <p className="font-serif italic text-3xl sm:text-4xl md:text-5xl lg:text-[56px] xl:text-[70px] leading-[1.05] text-brown">
-            in Alanya
+            {hero.headingItalic}
           </p>
 
           <p className="text-base sm:text-lg lg:text-[20px] leading-[1.3] font-medium tracking-[-0.4px] lg:tracking-[-0.8px] text-brown max-w-[663px]">
-            Clinical Manual Therapy, Applied Kinesiology, and Osteopathic
-            Techniques. Restoring your freedom of movement without drugs or
-            surgery.
+            {hero.description}
           </p>
 
           <a
@@ -71,7 +69,7 @@ export default function Hero() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-3 bg-brown text-cream-light rounded-full px-6 sm:px-8 py-4 sm:py-5 w-fit text-sm font-medium uppercase hover:opacity-90 transition-opacity"
           >
-            Book Now
+            {hero.cta}
             <Star className="w-4 h-4" />
           </a>
         </div>

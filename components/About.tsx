@@ -1,7 +1,11 @@
 import Image from "next/image";
 import Star from "./Star";
+import type { Locale } from "@/lib/i18n";
+import { t } from "@/lib/i18n";
 
-export default function About() {
+export default function About({ locale = "en" }: { locale?: Locale }) {
+  const a = t("about", locale);
+
   return (
     <section id="about" className="bg-cream-light py-20 px-6 lg:px-[150px] overflow-hidden">
       <div className="flex flex-col lg:flex-row gap-16 relative">
@@ -23,38 +27,32 @@ export default function About() {
         {/* Right - Text content */}
         <div className="flex flex-col gap-8 max-w-[700px]">
           <p className="text-xs font-semibold uppercase tracking-wide">
-            about the specialist
+            {a.tag}
           </p>
 
           <div>
             <h2 className="text-3xl md:text-[64px] md:leading-[1.0] font-medium tracking-tight text-brown">
-              My name is Larisa.
+              {a.heading}
             </h2>
             <p className="font-serif italic text-3xl md:text-[64px] md:leading-[1.0] text-brown mt-3">
-              I don&apos;t do &ldquo;Spa Massage&rdquo;.
+              {a.headingItalic}
             </p>
             <p className="text-3xl md:text-[64px] md:leading-[1.0] font-medium tracking-tight text-brown mt-3">
-              I restore health.
+              {a.headingEnd}
             </p>
           </div>
 
           <p className="text-lg md:text-2xl font-medium tracking-tight leading-relaxed text-brown">
-            In my practice, there are no standardized &ldquo;one-hour rubs&rdquo; to
-            relaxing music. I bring a solid medical education and over 20 years
-            of continuous clinical experience to every session.
+            {a.body}
           </p>
 
           <div>
             <p className="text-lg md:text-2xl font-medium tracking-tight text-brown mb-6">
-              Every treatment begins with a diagnostic assessment ~
+              {a.diagnosticIntro}
             </p>
 
             <ul className="flex flex-col gap-4">
-              {[
-                "I review your full medical history",
-                "Evaluate your muscular and autonomic nervous systems",
-                "Maintain a detailed patient file to track your recovery dynamics",
-              ].map((item) => (
+              {a.diagnosticItems.map((item) => (
                 <li key={item} className="flex items-start gap-3">
                   <Star className="w-5 h-5 text-brown shrink-0 mt-0.5" />
                   <span className="text-[20px] font-medium tracking-[-0.8px] text-brown">
@@ -71,8 +69,7 @@ export default function About() {
               !
             </span>
             <p className="text-lg md:text-2xl font-medium tracking-tight leading-relaxed text-brown pt-2">
-              My primary goal is to return your body to its natural balance and
-              biomechanics so you can live pain-free.
+              {a.callout}
             </p>
           </div>
         </div>
