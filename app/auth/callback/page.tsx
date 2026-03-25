@@ -6,30 +6,48 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
-  const exchanged = useRef(false);
+  const handled = useRef(false);
 
   useEffect(() => {
-    if (exchanged.current) return;
-    exchanged.current = true;
+    if (handled.current) return;
+    handled.current = true;
 
     const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
     const next = params.get("next") || "/admin";
-
-    if (!code) {
-      router.replace("/auth/auth-code-error");
-      return;
-    }
+    const destination = next.startsWith("/") ? next : "/admin";
 
     const supabase = createClient();
-    supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-      if (error) {
-        console.error("[auth/callback] exchange error:", error.message);
-        router.replace("/auth/auth-code-error");
-      } else {
-        router.replace(next.startsWith("/") ? next : "/admin");
+
+    // createBrowserClient auto-detects the ?code= param and exchanges it.
+    // We just listen for the resulting session.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event) => {
+        if (event === "SIGNED_IN") {
+          subscription.unsubscribe();
+          router.replace(destination);
+        } else if (event === "INITIAL_SESSION") {
+          // If there's already a session (e.g., auto-exchange completed
+          // before the listener was attached), check directly.
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+              subscription.unsubscribe();
+              router.replace(destination);
+            }
+          });
+        }
       }
-    });
+    );
+
+    // Timeout fallback — if nothing happens in 10s, show error page
+    const timeout = setTimeout(() => {
+      subscription.unsubscribe();
+      router.replace("/auth/auth-code-error");
+    }, 10_000);
+
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, [router]);
 
   return (
