@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Star from "./Star";
 import LanguageSwitcher from "./LanguageSwitcher";
+import MobileMenu from "./MobileMenu";
 import type { Locale } from "@/lib/i18n";
 import { t } from "@/lib/i18n";
 
@@ -11,36 +12,32 @@ export default function Hero({ locale = "en" }: { locale?: Locale }) {
   const nav = t("nav", locale);
   const hero = t("hero", locale);
 
+  const navLinks = [
+    { label: nav.treatments, href: "#treatments" },
+    { label: nav.about, href: "#about" },
+    { label: nav.reviews, href: "#reviews" },
+    { label: nav.contact, href: "#contact" },
+  ];
+
   return (
     <section className="bg-gold">
       {/* Navigation — full width, always above the image */}
       <nav className="flex items-center justify-between px-6 sm:px-10 lg:px-[150px] py-6 lg:py-8">
-        <Link href="/" className="font-logo text-[22px] sm:text-[26px] text-brown">
+        <Link href="/" className="font-logo text-[22px] sm:text-[26px] text-brown relative z-50">
           LARISA.
         </Link>
 
-        {/* Mobile menu button */}
-        <button className="md:hidden text-brown" aria-label="Menu">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 12h18M3 6h18M3 18h18" strokeLinecap="round" />
-          </svg>
-        </button>
+        {/* Mobile menu */}
+        <MobileMenu locale={locale} links={navLinks} />
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-6 lg:gap-12 xl:gap-16">
           <div className="flex items-center gap-6 lg:gap-12 xl:gap-16 text-sm font-medium uppercase tracking-wide text-brown">
-            <a href="#treatments" className="hover:opacity-70 transition-opacity">
-              {nav.treatments}
-            </a>
-            <a href="#about" className="hover:opacity-70 transition-opacity">
-              {nav.about}
-            </a>
-            <a href="#reviews" className="hover:opacity-70 transition-opacity">
-              {nav.reviews}
-            </a>
-            <a href="#contact" className="hover:opacity-70 transition-opacity">
-              {nav.contact}
-            </a>
+            {navLinks.map((l) => (
+              <a key={l.href} href={l.href} className="hover:opacity-70 transition-opacity">
+                {l.label}
+              </a>
+            ))}
           </div>
 
           <LanguageSwitcher locale={locale} />
