@@ -16,38 +16,31 @@ export default function AuthCallbackPage() {
     const next = params.get("next") || "/admin";
     const destination = next.startsWith("/") ? next : "/admin";
 
-    const supabase = createClient();
+    async function handleCallback() {
+      const supabase = createClient();
+      const code = params.get("code");
 
-    // createBrowserClient auto-detects the ?code= param and exchanges it.
-    // We just listen for the resulting session.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event) => {
-        if (event === "SIGNED_IN") {
-          subscription.unsubscribe();
+      if (code) {
+        // Try explicit exchange first
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (!error) {
           router.replace(destination);
-        } else if (event === "INITIAL_SESSION") {
-          // If there's already a session (e.g., auto-exchange completed
-          // before the listener was attached), check directly.
-          supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session) {
-              subscription.unsubscribe();
-              router.replace(destination);
-            }
-          });
+          return;
         }
       }
-    );
 
-    // Timeout fallback — if nothing happens in 10s, show error page
-    const timeout = setTimeout(() => {
-      subscription.unsubscribe();
+      // If explicit exchange failed (code already consumed by auto-exchange)
+      // or no code present, check if a session exists anyway.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        router.replace(destination);
+        return;
+      }
+
       router.replace("/auth/auth-code-error");
-    }, 10_000);
+    }
 
-    return () => {
-      clearTimeout(timeout);
-      subscription.unsubscribe();
-    };
+    handleCallback();
   }, [router]);
 
   return (
