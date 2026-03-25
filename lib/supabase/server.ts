@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { getSupabaseConfig } from './config'
+import { getSupabaseConfig, getCookieOptions } from './config'
 
 /**
  * If using Fluid compute: Don't put this client in a global variable. Always create a new client within each
@@ -14,6 +14,7 @@ export async function createClient() {
     url,
     publishableKey,
     {
+      cookieOptions: getCookieOptions(),
       cookies: {
         getAll() {
           return cookieStore.getAll()

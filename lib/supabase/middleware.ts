@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { getSupabaseConfig } from './config'
+import { getSupabaseConfig, getCookieOptions } from './config'
 import { DEV_ADMIN_COOKIE } from '@/lib/dev-auth'
 
 export async function updateSession(request: NextRequest) {
@@ -28,6 +28,7 @@ export async function updateSession(request: NextRequest) {
     url,
     publishableKey,
     {
+      cookieOptions: getCookieOptions(),
       cookies: {
         getAll() {
           return request.cookies.getAll()

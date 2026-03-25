@@ -1,3 +1,5 @@
+import type { CookieOptions } from '@supabase/ssr'
+
 const missingSupabaseEnvError =
   "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY in .env.local for local runs and in your deployment provider before running next build and next start."
 
@@ -10,4 +12,13 @@ export function getSupabaseConfig() {
   }
 
   return { url, publishableKey }
+}
+
+export function getCookieOptions(): CookieOptions {
+  const isProduction = process.env.NODE_ENV === 'production'
+  return {
+    path: '/',
+    sameSite: 'lax' as const,
+    secure: isProduction,
+  }
 }
