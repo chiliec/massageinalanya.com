@@ -48,9 +48,9 @@ export default function Hero({ locale = "en" }: { locale?: Locale }) {
       </nav>
 
       {/* Hero body — two-column grid, no overlap */}
-      <div className="grid grid-cols-1 lg:grid-cols-2">
+      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr]">
         {/* Left column — text on gold */}
-        <div className="flex flex-col gap-6 sm:gap-8 px-6 sm:px-10 lg:px-[150px] py-10 lg:py-16 xl:py-20">
+        <div className="flex flex-col gap-6 sm:gap-8 px-6 sm:px-10 lg:pl-[150px] lg:pr-12 py-10 lg:py-16 xl:py-20">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[56px] xl:text-[70px] leading-[1.05] font-medium tracking-tight lg:tracking-[-2.8px] text-brown hyphens-auto break-words">
             {hero.heading}
           </h1>
