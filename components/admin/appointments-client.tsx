@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 
 interface Member {
   id: string;
@@ -39,7 +39,6 @@ function displayDate(dateStr: string) {
 }
 
 export default function AppointmentsClient() {
-  const supabase = createClient();
   const [date, setDate] = useState(todayStr());
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -58,35 +57,37 @@ export default function AppointmentsClient() {
 
   async function loadAppointments() {
     setLoading(true);
-    const { data } = await supabase
-      .from("appointments")
-      .select("*, members(name)")
-      .eq("date", date)
-      .order("start_time");
-    setAppointments(data ?? []);
+    const res = await fetch(`/api/appointments?date=${date}`);
+    const data = await res.json();
+    setAppointments(Array.isArray(data) ? data : []);
     setLoading(false);
   }
 
   async function loadMembers() {
-    const { data } = await supabase.from("members").select("id, name").order("name");
-    setMembers(data ?? []);
+    const res = await fetch("/api/members");
+    const data = await res.json();
+    setMembers(Array.isArray(data) ? data : []);
   }
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
   useEffect(() => { loadAppointments(); }, [date]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadMembers(); }, []);
 
   async function create() {
     setSaving(true);
-    await supabase.from("appointments").insert({
-      date,
-      start_time: form.start_time,
-      duration: form.duration,
-      member_id: form.member_id || null,
-      skip_cleanup: form.skip_cleanup,
-      notes: form.notes,
+    await fetch("/api/appointments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        date,
+        start_time: form.start_time,
+        duration: form.duration,
+        member_id: form.member_id || null,
+        skip_cleanup: form.skip_cleanup,
+        notes: form.notes,
+      }),
     });
     setSaving(false);
     setDialog(false);
@@ -96,7 +97,7 @@ export default function AppointmentsClient() {
 
   async function remove(id: string) {
     if (!confirm("Delete this appointment?")) return;
-    await supabase.from("appointments").delete().eq("id", id);
+    await fetch(`/api/appointments?id=${id}`, { method: "DELETE" });
     loadAppointments();
   }
 
@@ -187,12 +188,12 @@ export default function AppointmentsClient() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  <a
+                  <Link
                     href={`/admin/appointments/${apt.id}`}
                     className="rounded-xl border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
                   >
                     Open
-                  </a>
+                  </Link>
                   <button
                     onClick={() => remove(apt.id)}
                     className="text-xs text-red-400 hover:text-red-600"

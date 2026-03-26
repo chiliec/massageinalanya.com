@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
 
 interface Member {
   id: string;
@@ -35,7 +34,6 @@ function formatTime(seconds: number) {
 }
 
 export default function AppointmentDetail({ appointment }: { appointment: Appointment }) {
-  const supabase = createClient();
   const totalSeconds = appointment.duration * 60;
 
   const [notes, setNotes] = useState(appointment.notes);
@@ -140,7 +138,11 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
   }
 
   async function saveNotes() {
-    await supabase.from("appointments").update({ notes }).eq("id", appointment.id);
+    await fetch("/api/appointments", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: appointment.id, notes }),
+    });
     setNotesSaved(true);
     setTimeout(() => setNotesSaved(false), 2000);
   }

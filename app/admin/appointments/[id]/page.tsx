@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { isDevMode, isDevAuthenticated } from "@/lib/dev-auth";
 import AppointmentDetail from "@/components/admin/appointment-detail";
 
@@ -34,7 +35,8 @@ export default async function AppointmentPage({
     );
   }
 
-  const { data: appointment } = await supabase
+  const adminSupabase = createAdminClient();
+  const { data: appointment } = await adminSupabase
     .from("appointments")
     .select("*, members(*)")
     .eq("id", id)

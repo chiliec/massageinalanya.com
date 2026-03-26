@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 
 type ContactType = "phone" | "telegram" | "whatsapp" | "instagram" | "other";
 
@@ -25,7 +25,6 @@ interface AppointmentNote {
 const CONTACT_TYPES: ContactType[] = ["phone", "telegram", "whatsapp", "instagram", "other"];
 
 export default function MembersClient() {
-  const supabase = createClient();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -37,24 +36,25 @@ export default function MembersClient() {
   const [contactValue, setContactValue] = useState("");
 
   async function load() {
-    const { data } = await supabase
-      .from("members")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setMembers(data ?? []);
+    const res = await fetch("/api/members");
+    const data = await res.json();
+    setMembers(Array.isArray(data) ? data : []);
     setLoading(false);
   }
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, []);
 
   async function add() {
     if (!name.trim()) return;
-    await supabase.from("members").insert({
-      name: name.trim(),
-      contact_type: contactType,
-      contact_value: contactValue.trim(),
-      notes: "",
+    await fetch("/api/members", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: name.trim(),
+        contact_type: contactType,
+        contact_value: contactValue.trim(),
+      }),
     });
     setName("");
     setContactValue("");
@@ -64,12 +64,16 @@ export default function MembersClient() {
 
   async function remove(id: string) {
     if (!confirm("Delete this member?")) return;
-    await supabase.from("members").delete().eq("id", id);
+    await fetch(`/api/members?id=${id}`, { method: "DELETE" });
     load();
   }
 
   async function saveNotes(id: string, notes: string) {
-    await supabase.from("members").update({ notes }).eq("id", id);
+    await fetch("/api/members", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, notes }),
+    });
   }
 
   async function toggle(id: string) {
@@ -79,12 +83,13 @@ export default function MembersClient() {
     }
     setExpanded(id);
     if (!aptNotes[id]) {
-      const { data } = await supabase
-        .from("appointments")
-        .select("id, date, start_time, duration, notes")
-        .eq("member_id", id)
-        .order("date", { ascending: false });
-      setAptNotes((prev) => ({ ...prev, [id]: data ?? [] }));
+      const res = await fetch("/api/appointments", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "member_notes", member_id: id }),
+      });
+      const data = await res.json();
+      setAptNotes((prev) => ({ ...prev, [id]: Array.isArray(data) ? data : [] }));
     }
   }
 
@@ -205,12 +210,12 @@ export default function MembersClient() {
                               {apt.notes && (
                                 <p className="mb-1.5 text-sm text-zinc-700">{apt.notes}</p>
                               )}
-                              <a
+                              <Link
                                 href={`/admin/appointments/${apt.id}`}
                                 className="text-xs text-zinc-400 underline-offset-2 hover:text-zinc-700 hover:underline"
                               >
                                 Open appointment →
-                              </a>
+                              </Link>
                             </div>
                           ))}
                         </div>
