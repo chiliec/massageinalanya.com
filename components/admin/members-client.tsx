@@ -29,6 +29,7 @@ export default function MembersClient() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [aptNotes, setAptNotes] = useState<Record<string, AppointmentNote[]>>({});
+  const [savedId, setSavedId] = useState<string | null>(null);
 
   // Add form
   const [name, setName] = useState("");
@@ -74,6 +75,10 @@ export default function MembersClient() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, notes }),
     });
+    // Update local state so re-expanding shows the saved value
+    setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, notes } : m)));
+    setSavedId(id);
+    setTimeout(() => setSavedId((cur) => (cur === id ? null : cur)), 2000);
   }
 
   async function toggle(id: string) {
@@ -175,7 +180,12 @@ export default function MembersClient() {
                 {expanded === m.id && (
                   <div className="mt-3 space-y-4 border-t border-zinc-100 pt-3">
                     <div>
-                      <label className="mb-1 block text-xs text-zinc-400">Notes</label>
+                      <div className="mb-1 flex items-center justify-between">
+                        <label className="text-xs text-zinc-400">Notes</label>
+                        {savedId === m.id && (
+                          <span className="text-xs text-green-600">Saved</span>
+                        )}
+                      </div>
                       <textarea
                         defaultValue={m.notes}
                         onBlur={(e) => saveNotes(m.id, e.target.value)}
@@ -195,10 +205,13 @@ export default function MembersClient() {
                         <p className="text-xs text-zinc-400">No appointments yet.</p>
                       ) : (
                         <div className="space-y-2">
-                          {aptNotes[m.id].map((apt) => (
-                            <div
+                          {[...aptNotes[m.id]]
+                            .sort((a, b) => (b.date + b.start_time).localeCompare(a.date + a.start_time))
+                            .map((apt) => (
+                            <Link
                               key={apt.id}
-                              className="rounded-xl border border-zinc-100 p-3"
+                              href={`/admin/appointments/${apt.id}`}
+                              className="block rounded-xl border border-zinc-100 p-3 transition hover:bg-zinc-50"
                             >
                               <div className="mb-1 flex items-center gap-2 text-xs text-zinc-400">
                                 <span>{apt.date}</span>
@@ -208,15 +221,9 @@ export default function MembersClient() {
                                 <span>{apt.duration} min</span>
                               </div>
                               {apt.notes && (
-                                <p className="mb-1.5 text-sm text-zinc-700">{apt.notes}</p>
+                                <p className="text-sm text-zinc-700">{apt.notes}</p>
                               )}
-                              <Link
-                                href={`/admin/appointments/${apt.id}`}
-                                className="text-xs text-zinc-400 underline-offset-2 hover:text-zinc-700 hover:underline"
-                              >
-                                Open appointment →
-                              </Link>
-                            </div>
+                            </Link>
                           ))}
                         </div>
                       )}

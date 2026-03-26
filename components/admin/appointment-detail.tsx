@@ -21,33 +21,39 @@ interface Appointment {
   members: Member | null;
 }
 
-type TimerState = "idle" | "running" | "paused" | "ended" | "alarm";
+type TimerState = "idle" | "running" | "paused" | "ended";
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
 }
 
 function formatTime(seconds: number) {
-  const m = Math.floor(seconds / 60);
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
+  if (h > 0) return `${h}:${pad(m)}:${pad(s)}`;
   return `${pad(m)}:${pad(s)}`;
 }
 
 export default function AppointmentDetail({ appointment }: { appointment: Appointment }) {
-  const totalSeconds = appointment.duration * 60;
+  const defaultSeconds = appointment.duration * 60;
 
   const [notes, setNotes] = useState(appointment.notes);
   const [notesSaved, setNotesSaved] = useState(false);
 
-  // Timer
+  // Timer — editable hours/minutes before starting
+  const [editHours, setEditHours] = useState(Math.floor(defaultSeconds / 3600));
+  const [editMinutes, setEditMinutes] = useState(Math.floor((defaultSeconds % 3600) / 60));
   const [timerState, setTimerState] = useState<TimerState>("idle");
-  const [remaining, setRemaining] = useState(totalSeconds);
+  const [remaining, setRemaining] = useState(defaultSeconds);
   const [tracks, setTracks] = useState<string[]>([]);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const alarmTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const musicRef = useRef<HTMLAudioElement | null>(null);
-  const alarmRef = useRef<HTMLAudioElement | null>(null);
+
+  function editedTotalSeconds() {
+    return editHours * 3600 + editMinutes * 60;
+  }
 
   useEffect(() => {
     fetch("/api/music")
@@ -59,15 +65,6 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
     clearInterval(intervalRef.current!);
     musicRef.current?.pause();
     setTimerState("ended");
-
-    // Alarm fires after 60 s of no action
-    alarmTimeoutRef.current = setTimeout(() => {
-      const alarm = new Audio("/alarm.mp3");
-      alarm.loop = true;
-      alarm.play().catch(() => {});
-      alarmRef.current = alarm;
-      setTimerState("alarm");
-    }, 60_000);
   }
 
   function startInterval() {
@@ -76,7 +73,6 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
       setRemaining((r) => {
         if (r <= 1) {
           clearInterval(intervalRef.current!);
-          // defer so we're not calling setState inside setState
           setTimeout(endTimer, 0);
           return 0;
         }
@@ -86,6 +82,9 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
   }
 
   function start() {
+    if (timerState === "idle") {
+      setRemaining(editedTotalSeconds());
+    }
     if (tracks.length > 0 && !musicRef.current) {
       const track = tracks[Math.floor(Math.random() * tracks.length)];
       const audio = new Audio(track);
@@ -109,31 +108,25 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
   useEffect(() => {
     return () => {
       clearInterval(intervalRef.current!);
-      clearTimeout(alarmTimeoutRef.current!);
       musicRef.current?.pause();
-      alarmRef.current?.pause();
     };
   }, []);
 
   function dismiss() {
-    clearTimeout(alarmTimeoutRef.current!);
-    alarmRef.current?.pause();
-    alarmRef.current = null;
     musicRef.current?.pause();
     musicRef.current = null;
     clearInterval(intervalRef.current!);
-    setRemaining(totalSeconds);
+    const total = editedTotalSeconds();
+    setRemaining(total);
     setTimerState("idle");
   }
 
   function reset() {
     clearInterval(intervalRef.current!);
-    clearTimeout(alarmTimeoutRef.current!);
     musicRef.current?.pause();
     musicRef.current = null;
-    alarmRef.current?.pause();
-    alarmRef.current = null;
-    setRemaining(totalSeconds);
+    const total = editedTotalSeconds();
+    setRemaining(total);
     setTimerState("idle");
   }
 
@@ -147,21 +140,18 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
     setTimeout(() => setNotesSaved(false), 2000);
   }
 
-  const isEnded = timerState === "ended" || timerState === "alarm";
   const isLow = remaining < 60 && timerState === "running";
 
   return (
     <div className="space-y-6">
       {/* Red overlay when session ends */}
-      {isEnded && (
+      {timerState === "ended" && (
         <div
           className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-red-600"
           onClick={dismiss}
         >
           <p className="text-5xl font-bold text-white">Session ended</p>
-          <p className="mt-4 text-xl text-red-200">
-            {timerState === "alarm" ? "Alarm playing!" : "Tap to dismiss (alarm in 1 min)"}
-          </p>
+          <p className="mt-4 text-xl text-red-200">Tap anywhere to dismiss</p>
           <button
             onClick={dismiss}
             className="mt-10 rounded-2xl bg-white px-12 py-5 text-2xl font-semibold text-red-600 shadow-lg transition hover:bg-red-50"
@@ -205,21 +195,58 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
           Session timer
         </p>
 
-        <div
-          className={`mt-6 font-mono text-9xl font-bold tabular-nums transition-colors ${
-            isLow ? "text-red-500" : "text-zinc-900"
-          }`}
-        >
-          {formatTime(remaining)}
-        </div>
-
-        <p className="mt-2 text-sm text-zinc-400">{appointment.duration} min session</p>
+        {timerState === "idle" ? (
+          <div className="mt-6 flex items-center justify-center gap-1">
+            <span
+              contentEditable
+              suppressContentEditableWarning
+              onBlur={(e) => {
+                const v = Math.max(0, Math.min(23, parseInt(e.currentTarget.textContent || "0", 10) || 0));
+                setEditHours(v);
+                e.currentTarget.textContent = pad(v);
+                setRemaining(v * 3600 + editMinutes * 60);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { e.preventDefault(); e.currentTarget.blur(); }
+              }}
+              className="inline-block min-w-[1ch] font-mono text-8xl font-bold text-zinc-900 outline-none sm:text-9xl"
+            >
+              {pad(editHours)}
+            </span>
+            <span className="font-mono text-8xl font-bold text-zinc-300 sm:text-9xl">:</span>
+            <span
+              contentEditable
+              suppressContentEditableWarning
+              onBlur={(e) => {
+                const v = Math.max(0, Math.min(59, parseInt(e.currentTarget.textContent || "0", 10) || 0));
+                setEditMinutes(v);
+                e.currentTarget.textContent = pad(v);
+                setRemaining(editHours * 3600 + v * 60);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { e.preventDefault(); e.currentTarget.blur(); }
+              }}
+              className="inline-block min-w-[1ch] font-mono text-8xl font-bold text-zinc-900 outline-none sm:text-9xl"
+            >
+              {pad(editMinutes)}
+            </span>
+          </div>
+        ) : (
+          <div
+            className={`mt-6 font-mono text-8xl font-bold tabular-nums transition-colors sm:text-9xl ${
+              isLow ? "text-red-500" : "text-zinc-900"
+            }`}
+          >
+            {formatTime(remaining)}
+          </div>
+        )}
 
         <div className="mt-8 flex items-center justify-center gap-3">
           {timerState === "idle" && (
             <button
               onClick={start}
-              className="rounded-2xl bg-zinc-900 px-12 py-4 text-xl font-semibold text-white transition hover:bg-zinc-700"
+              disabled={editedTotalSeconds() === 0}
+              className="rounded-2xl bg-zinc-900 px-12 py-4 text-xl font-semibold text-white transition hover:bg-zinc-700 disabled:opacity-40"
             >
               Start
             </button>
