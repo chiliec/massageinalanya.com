@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import AutoSaveNotes from "@/components/admin/auto-save-notes";
 
 type ContactType = "phone" | "telegram" | "whatsapp" | "instagram" | "other";
 
@@ -29,7 +30,6 @@ export default function MembersClient() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [aptNotes, setAptNotes] = useState<Record<string, AppointmentNote[]>>({});
-  const [savedId, setSavedId] = useState<string | null>(null);
 
   // Add form
   const [name, setName] = useState("");
@@ -69,17 +69,14 @@ export default function MembersClient() {
     load();
   }
 
-  async function saveNotes(id: string, notes: string) {
+  const saveMemberNotes = useCallback(async (id: string, notes: string) => {
     await fetch("/api/members", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, notes }),
     });
-    // Update local state so re-expanding shows the saved value
     setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, notes } : m)));
-    setSavedId(id);
-    setTimeout(() => setSavedId((cur) => (cur === id ? null : cur)), 2000);
-  }
+  }, []);
 
   async function toggle(id: string) {
     if (expanded === id) {
@@ -179,21 +176,13 @@ export default function MembersClient() {
                 {/* Expanded */}
                 {expanded === m.id && (
                   <div className="mt-3 space-y-4 border-t border-zinc-100 pt-3">
-                    <div>
-                      <div className="mb-1 flex items-center justify-between">
-                        <label className="text-xs text-zinc-400">Notes</label>
-                        {savedId === m.id && (
-                          <span className="text-xs text-green-600">Saved</span>
-                        )}
-                      </div>
-                      <textarea
-                        defaultValue={m.notes}
-                        onBlur={(e) => saveNotes(m.id, e.target.value)}
-                        rows={3}
-                        placeholder="Notes about this member…"
-                        className="w-full resize-none rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-400"
-                      />
-                    </div>
+                    <AutoSaveNotes
+                      key={m.id}
+                      label="Notes"
+                      value={m.notes}
+                      placeholder="Notes about this member…"
+                      onSave={(val) => saveMemberNotes(m.id, val)}
+                    />
 
                     <div>
                       <label className="mb-2 block text-xs text-zinc-400">

@@ -533,26 +533,14 @@ function TimelineSlot({
     return aptStart >= slotStart && aptStart < slotEnd;
   });
 
-  // Appointments whose SESSION (not cleanup) extends into this slot from earlier
-  const sessionContinues = appointments.filter((apt) => {
-    const aptStart = timeToMinutes(apt.start_time);
-    const aptSessionEnd = aptStart + apt.duration;
-    return aptStart < slotStart && aptSessionEnd > slotStart;
-  });
-
-  // Appointments where only CLEANUP extends into this slot (session ended before this slot)
-  const cleanupOnly = appointments.filter((apt) => {
+  // Appointments where only cleanup extends into this slot (session ended before)
+  const cleanupOnly = startsHere.length === 0 && appointments.some((apt) => {
     if (apt.skip_cleanup) return false;
     const aptStart = timeToMinutes(apt.start_time);
     const aptSessionEnd = aptStart + apt.duration;
     const aptTotalEnd = aptSessionEnd + 15;
-    // Session ended before/at this slot start, but cleanup extends into it
     return aptSessionEnd <= slotStart && aptTotalEnd > slotStart;
   });
-
-  const hasStarts = startsHere.length > 0;
-  const hasSessionCont = sessionContinues.length > 0;
-  const hasCleanupOnly = cleanupOnly.length > 0;
 
   return (
     <div className="flex border-t border-zinc-100 first:border-t-0">
@@ -563,53 +551,37 @@ function TimelineSlot({
 
       {/* Slot content */}
       <div className="flex-1 min-h-[56px] py-1">
-        {hasStarts || hasSessionCont ? (
+        {startsHere.length > 0 ? (
           <div className="space-y-1">
-            {startsHere.map((apt) => {
-              const aptStart = timeToMinutes(apt.start_time);
-              const totalMin = apt.duration + (apt.skip_cleanup ? 0 : 15);
-              const aptTotalEnd = aptStart + totalMin;
-              const remainingInSlot = aptTotalEnd - slotStart;
-              const blocks = Math.ceil(remainingInSlot / 60);
-              return (
-                <Link
-                  key={apt.id}
-                  href={`/admin/appointments/${apt.id}`}
-                  className="flex items-center gap-3 rounded-xl bg-zinc-900 px-3 py-2 text-white transition hover:bg-zinc-700"
-                  style={{ minHeight: `${blocks * 56}px` }}
+            {startsHere.map((apt) => (
+              <Link
+                key={apt.id}
+                href={`/admin/appointments/${apt.id}`}
+                className="flex items-center gap-3 rounded-xl bg-zinc-900 px-3 py-2 text-white transition hover:bg-zinc-700 min-h-[48px]"
+              >
+                <span className="font-mono text-sm font-semibold">
+                  {apt.start_time.slice(0, 5)}
+                </span>
+                <span className="flex-1 truncate text-sm">
+                  {apt.members?.name ?? "No member"}
+                </span>
+                <span className="shrink-0 text-xs text-zinc-400">
+                  {apt.duration}m{!apt.skip_cleanup && "+15"}
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onDelete(apt.id);
+                  }}
+                  className="shrink-0 text-xs text-red-300 hover:text-red-100"
                 >
-                  <span className="font-mono text-sm font-semibold">
-                    {apt.start_time.slice(0, 5)}
-                  </span>
-                  <span className="flex-1 truncate text-sm">
-                    {apt.members?.name ?? "No member"}
-                  </span>
-                  <span className="shrink-0 text-xs text-zinc-400">
-                    {apt.duration}m{!apt.skip_cleanup && "+15"}
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onDelete(apt.id);
-                    }}
-                    className="shrink-0 text-xs text-red-300 hover:text-red-100"
-                  >
-                    ×
-                  </button>
-                </Link>
-              );
-            })}
-
-            {/* Full session continuation */}
-            {!hasStarts && hasSessionCont && (
-              <div className="flex h-full min-h-[48px] items-center rounded-xl bg-zinc-100 px-3">
-                <span className="text-xs text-zinc-400">···</span>
-              </div>
-            )}
+                  ×
+                </button>
+              </Link>
+            ))}
           </div>
-        ) : hasCleanupOnly ? (
-          /* Only cleanup spills into this slot — small bar + clickable area */
+        ) : cleanupOnly ? (
           <div className="flex flex-col gap-1 h-full min-h-[56px]">
             <div className="flex h-[14px] items-center rounded-lg bg-zinc-100 px-3">
               <span className="text-[10px] text-zinc-400">cleanup</span>

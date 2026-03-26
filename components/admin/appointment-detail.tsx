@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import AutoSaveNotes from "@/components/admin/auto-save-notes";
 
 interface Member {
   id: string;
@@ -36,10 +38,14 @@ function formatTime(seconds: number) {
 }
 
 export default function AppointmentDetail({ appointment }: { appointment: Appointment }) {
+  const router = useRouter();
   const defaultSeconds = appointment.duration * 60;
 
-  const [notes, setNotes] = useState(appointment.notes);
-  const [notesSaved, setNotesSaved] = useState(false);
+  async function deleteAppointment() {
+    if (!confirm("Delete this appointment?")) return;
+    await fetch(`/api/appointments?id=${appointment.id}`, { method: "DELETE" });
+    router.push("/admin/appointments");
+  }
 
   // Timer — editable hours/minutes before starting
   const [editHours, setEditHours] = useState(Math.floor(defaultSeconds / 3600));
@@ -130,15 +136,13 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
     setTimerState("idle");
   }
 
-  async function saveNotes() {
+  const saveNotes = useCallback(async (val: string) => {
     await fetch("/api/appointments", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: appointment.id, notes }),
+      body: JSON.stringify({ id: appointment.id, notes: val }),
     });
-    setNotesSaved(true);
-    setTimeout(() => setNotesSaved(false), 2000);
-  }
+  }, [appointment.id]);
 
   const isLow = remaining < 60 && timerState === "running";
 
@@ -183,9 +187,17 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
               </p>
             )}
           </div>
-          <Link href="/admin/appointments" className="text-sm text-zinc-400 hover:text-zinc-700">
-            ← Back
-          </Link>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={deleteAppointment}
+              className="text-sm text-red-400 hover:text-red-600"
+            >
+              Delete
+            </button>
+            <Link href="/admin/appointments" className="text-sm text-zinc-400 hover:text-zinc-700">
+              ← Back
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -289,25 +301,13 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
 
       {/* Notes */}
       <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-zinc-700">Session notes</h3>
-          {notesSaved && <span className="text-xs text-green-600">Saved</span>}
-        </div>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={4}
+        <AutoSaveNotes
+          label="Session notes"
+          value={appointment.notes}
           placeholder="Notes for this session…"
-          className="w-full resize-none rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-400"
+          rows={4}
+          onSave={saveNotes}
         />
-        <div className="mt-3 flex justify-end">
-          <button
-            onClick={saveNotes}
-            className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
-          >
-            Save notes
-          </button>
-        </div>
       </section>
     </div>
   );
