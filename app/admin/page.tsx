@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/auth/sign-out-button";
@@ -75,15 +76,27 @@ export default async function AdminPage() {
             This section is ready for admin-only controls and content management.
           </p>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl border border-dashed border-zinc-200 p-4 text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-              Add booking controls
-            </div>
-            <a
+            <Link
+              href="/admin/members"
+              className="rounded-2xl border border-dashed border-zinc-200 p-4 text-sm font-medium text-zinc-700 transition hover:border-zinc-300 hover:text-zinc-900 dark:border-zinc-800 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:text-zinc-50"
+            >
+              <p className="font-semibold">Members</p>
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Contact info, notes, appointment history</p>
+            </Link>
+            <Link
+              href="/admin/appointments"
+              className="rounded-2xl border border-dashed border-zinc-200 p-4 text-sm font-medium text-zinc-700 transition hover:border-zinc-300 hover:text-zinc-900 dark:border-zinc-800 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:text-zinc-50"
+            >
+              <p className="font-semibold">Appointments</p>
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Calendar, session timer, music player</p>
+            </Link>
+            <Link
               href="/admin/posts"
               className="rounded-2xl border border-dashed border-zinc-200 p-4 text-sm font-medium text-zinc-700 transition hover:border-zinc-300 hover:text-zinc-900 dark:border-zinc-800 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:text-zinc-50"
             >
-              Manage blog posts
-            </a>
+              <p className="font-semibold">Blog posts</p>
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Write and publish articles</p>
+            </Link>
           </div>
         </section>
       </main>
