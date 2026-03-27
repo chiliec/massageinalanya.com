@@ -122,9 +122,7 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
     musicRef.current?.pause();
     musicRef.current = null;
     clearInterval(intervalRef.current!);
-    const total = editedTotalSeconds();
-    setRemaining(total);
-    setTimerState("idle");
+    router.push("/admin/appointments");
   }
 
   function reset() {

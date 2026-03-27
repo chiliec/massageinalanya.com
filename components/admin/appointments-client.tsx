@@ -237,6 +237,23 @@ export default function AppointmentsClient() {
     !hasConflicts &&
     (isNewMember ? newMemberName.trim().length > 0 : form.member_id.length > 0);
 
+  // Workload counts for the week strip
+  const [dayCounts, setDayCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const from = shiftDay(date, -3);
+    const to = shiftDay(date, 3);
+    fetch(`/api/appointments?from=${from}&to=${to}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && typeof data === "object" && !Array.isArray(data)) setDayCounts(data);
+      });
+  }, [date]);
+
+  const weekDays = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => shiftDay(date, i - 3));
+  }, [date]);
+
   // Which hours to show
   const earlyHours = ALL_HOURS.filter((h) => h < WORK_START);
   const workHours = ALL_HOURS.filter((h) => h >= WORK_START && h < WORK_END);
@@ -281,6 +298,44 @@ export default function AppointmentsClient() {
             Today
           </button>
         </div>
+
+        {/* Week strip with workload indicators */}
+        <div className="mt-4 grid grid-cols-7 gap-1">
+          {weekDays.map((d) => {
+            const count = dayCounts[d] || 0;
+            const isSelected = d === date;
+            const isToday = d === todayStr();
+            const dayLabel = new Date(d + "T12:00:00").toLocaleDateString("en-US", { weekday: "short" });
+            const dayNum = new Date(d + "T12:00:00").getDate();
+
+            return (
+              <button
+                key={d}
+                onClick={() => setDate(d)}
+                className={`flex flex-col items-center rounded-xl py-1.5 text-xs transition ${
+                  isSelected
+                    ? "bg-zinc-900 text-white"
+                    : isToday
+                      ? "bg-zinc-100 text-zinc-900"
+                      : "text-zinc-500 hover:bg-zinc-50"
+                }`}
+              >
+                <span className="text-[10px] font-medium uppercase">{dayLabel}</span>
+                <span className="font-semibold">{dayNum}</span>
+                <div className="mt-0.5 flex gap-0.5">
+                  {Array.from({ length: count }, (_, i) => (
+                    <span
+                      key={i}
+                      className={`inline-block h-1 w-1 rounded-full ${
+                        isSelected ? "bg-white/60" : "bg-zinc-900"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </section>
 
       {/* Timeline */}
@@ -296,10 +351,10 @@ export default function AppointmentsClient() {
           {!showEarly && (
             <button
               onClick={() => setShowEarly(true)}
-              className="mb-2 flex w-full items-center justify-center gap-1 rounded-xl border border-dashed border-zinc-200 py-2 text-xs text-zinc-400 transition hover:border-zinc-400 hover:text-zinc-600"
+              className="mb-2 flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-zinc-50 py-2.5 text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-800"
             >
               Show 00:00–{pad(WORK_START)}:00
-              {hasEarlyApts && <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-zinc-900" />}
+              {hasEarlyApts && <span className="rounded-full bg-zinc-900 px-1.5 py-0.5 text-[10px] font-semibold text-white">{appointments.filter((a) => timeToMinutes(a.start_time) < WORK_START * 60).length}</span>}
             </button>
           )}
 
@@ -317,7 +372,7 @@ export default function AppointmentsClient() {
               ))}
               <button
                 onClick={() => setShowEarly(false)}
-                className="mb-2 flex w-full items-center justify-center rounded-xl border border-dashed border-zinc-200 py-1 text-xs text-zinc-400 transition hover:border-zinc-400 hover:text-zinc-600"
+                className="mb-2 flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-zinc-50 py-2.5 text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-800"
               >
                 Hide early hours
               </button>
@@ -339,10 +394,10 @@ export default function AppointmentsClient() {
           {!showLate && (
             <button
               onClick={() => setShowLate(true)}
-              className="mt-2 flex w-full items-center justify-center gap-1 rounded-xl border border-dashed border-zinc-200 py-2 text-xs text-zinc-400 transition hover:border-zinc-400 hover:text-zinc-600"
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-zinc-50 py-2.5 text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-800"
             >
               Show {pad(WORK_END)}:00–00:00
-              {hasLateApts && <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-zinc-900" />}
+              {hasLateApts && <span className="rounded-full bg-zinc-900 px-1.5 py-0.5 text-[10px] font-semibold text-white">{appointments.filter((a) => timeToMinutes(a.start_time) >= WORK_END * 60).length}</span>}
             </button>
           )}
 
@@ -360,7 +415,7 @@ export default function AppointmentsClient() {
               ))}
               <button
                 onClick={() => setShowLate(false)}
-                className="mt-2 flex w-full items-center justify-center rounded-xl border border-dashed border-zinc-200 py-1 text-xs text-zinc-400 transition hover:border-zinc-400 hover:text-zinc-600"
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-300 bg-zinc-50 py-2.5 text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-800"
               >
                 Hide late hours
               </button>
@@ -511,6 +566,8 @@ export default function AppointmentsClient() {
   );
 }
 
+const SLOT_HEIGHT = 64; // px per hour
+
 // --- Timeline slot sub-component ---
 
 function TimelineSlot({
@@ -533,15 +590,6 @@ function TimelineSlot({
     return aptStart >= slotStart && aptStart < slotEnd;
   });
 
-  // Appointments where only cleanup extends into this slot (session ended before)
-  const cleanupOnly = startsHere.length === 0 && appointments.some((apt) => {
-    if (apt.skip_cleanup) return false;
-    const aptStart = timeToMinutes(apt.start_time);
-    const aptSessionEnd = aptStart + apt.duration;
-    const aptTotalEnd = aptSessionEnd + 15;
-    return aptSessionEnd <= slotStart && aptTotalEnd > slotStart;
-  });
-
   return (
     <div className="flex border-t border-zinc-100 first:border-t-0">
       {/* Hour label */}
@@ -550,14 +598,26 @@ function TimelineSlot({
       </div>
 
       {/* Slot content */}
-      <div className="flex-1 min-h-[56px] py-1">
-        {startsHere.length > 0 ? (
-          <div className="space-y-1">
-            {startsHere.map((apt) => (
-              <Link
-                key={apt.id}
-                href={`/admin/appointments/${apt.id}`}
-                className="flex items-center gap-3 rounded-xl bg-zinc-900 px-3 py-2 text-white transition hover:bg-zinc-700 min-h-[48px]"
+      <div className="relative flex-1 overflow-visible" style={{ height: SLOT_HEIGHT }}>
+        {startsHere.map((apt) => {
+          const aptStart = timeToMinutes(apt.start_time);
+          const offsetMin = aptStart - slotStart;
+          const totalMin = apt.duration + (apt.skip_cleanup ? 0 : 15);
+          const topPx = (offsetMin / 60) * SLOT_HEIGHT;
+          const heightPx = (totalMin / 60) * SLOT_HEIGHT;
+          const sessionHeightPx = (apt.duration / 60) * SLOT_HEIGHT;
+
+          return (
+            <Link
+              key={apt.id}
+              href={`/admin/appointments/${apt.id}`}
+              className="absolute left-0 right-0 z-10 flex flex-col overflow-hidden rounded-xl transition hover:brightness-110"
+              style={{ top: topPx, height: Math.max(heightPx, 40) }}
+            >
+              {/* Session portion */}
+              <div
+                className="flex items-center gap-3 bg-zinc-900 px-3 text-white"
+                style={{ height: Math.max(sessionHeightPx, 40) }}
               >
                 <span className="font-mono text-sm font-semibold">
                   {apt.start_time.slice(0, 5)}
@@ -566,7 +626,7 @@ function TimelineSlot({
                   {apt.members?.name ?? "No member"}
                 </span>
                 <span className="shrink-0 text-xs text-zinc-400">
-                  {apt.duration}m{!apt.skip_cleanup && "+15"}
+                  {apt.duration}m
                 </span>
                 <button
                   onClick={(e) => {
@@ -578,23 +638,20 @@ function TimelineSlot({
                 >
                   ×
                 </button>
-              </Link>
-            ))}
-          </div>
-        ) : cleanupOnly ? (
-          <div className="flex flex-col gap-1 h-full min-h-[56px]">
-            <div className="flex h-[14px] items-center rounded-lg bg-zinc-100 px-3">
-              <span className="text-[10px] text-zinc-400">cleanup</span>
-            </div>
-            <button
-              onClick={() => onClickSlot(hour)}
-              className="flex flex-1 min-h-[34px] items-center justify-center rounded-xl text-xs text-zinc-300 transition hover:bg-zinc-50 hover:text-zinc-500"
-            />
-          </div>
-        ) : (
+              </div>
+              {/* Cleanup portion (lighter tail) */}
+              {!apt.skip_cleanup && (
+                <div className="flex-1 bg-zinc-700" />
+              )}
+            </Link>
+          );
+        })}
+
+        {/* Clickable empty area */}
+        {startsHere.length === 0 && (
           <button
             onClick={() => onClickSlot(hour)}
-            className="flex h-full min-h-[48px] w-full items-center justify-center rounded-xl text-xs text-zinc-300 transition hover:bg-zinc-50 hover:text-zinc-500"
+            className="absolute inset-0 flex items-center justify-center rounded-xl text-xs text-zinc-300 transition hover:bg-zinc-50 hover:text-zinc-500"
           />
         )}
       </div>

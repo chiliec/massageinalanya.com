@@ -90,13 +90,13 @@ export default async function AdminPage() {
               <p className="font-semibold">Appointments</p>
               <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Calendar, session timer, music player</p>
             </Link>
-            <Link
+            {/* <Link
               href="/admin/posts"
               className="rounded-2xl border border-dashed border-zinc-200 p-4 text-sm font-medium text-zinc-700 transition hover:border-zinc-300 hover:text-zinc-900 dark:border-zinc-800 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:text-zinc-50"
             >
               <p className="font-semibold">Blog posts</p>
               <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Write and publish articles</p>
-            </Link>
+            </Link> */}
           </div>
         </section>
       </main>

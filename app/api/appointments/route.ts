@@ -22,6 +22,25 @@ export async function GET(request: Request) {
     return NextResponse.json(data);
   }
 
+  // Appointment counts by date range
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
+  if (from && to) {
+    const { data, error } = await supabase
+      .from("appointments")
+      .select("date")
+      .gte("date", from)
+      .lte("date", to);
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    const counts: Record<string, number> = {};
+    for (const row of data ?? []) {
+      counts[row.date] = (counts[row.date] || 0) + 1;
+    }
+    return NextResponse.json(counts);
+  }
+
   // Appointments by date
   const date = searchParams.get("date");
   if (!date) return NextResponse.json({ error: "date is required" }, { status: 400 });
