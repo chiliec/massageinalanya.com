@@ -36,6 +36,12 @@ export default function MembersClient() {
   const [contactType, setContactType] = useState<ContactType>("phone");
   const [contactValue, setContactValue] = useState("");
 
+  // Edit form
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editContactType, setEditContactType] = useState<ContactType>("phone");
+  const [editContactValue, setEditContactValue] = useState("");
+
   async function load() {
     const res = await fetch("/api/members");
     const data = await res.json();
@@ -77,6 +83,28 @@ export default function MembersClient() {
     });
     setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, notes } : m)));
   }, []);
+
+  function startEdit(m: Member) {
+    setEditing(m.id);
+    setEditName(m.name);
+    setEditContactType(m.contact_type);
+    setEditContactValue(m.contact_value);
+  }
+
+  async function saveEdit(id: string) {
+    await fetch("/api/members", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id,
+        name: editName.trim(),
+        contact_type: editContactType,
+        contact_value: editContactValue.trim(),
+      }),
+    });
+    setEditing(null);
+    load();
+  }
 
   async function toggle(id: string) {
     if (expanded === id) {
@@ -151,7 +179,10 @@ export default function MembersClient() {
             {members.map((m) => (
               <div key={m.id} className="rounded-2xl border border-zinc-100 p-4">
                 {/* Row */}
-                <div className="flex flex-wrap items-center gap-3">
+                <div
+                  onClick={() => toggle(m.id)}
+                  className="flex cursor-pointer flex-wrap items-center gap-3"
+                >
                   <span className="flex-1 font-medium text-zinc-900">{m.name}</span>
                   <span className="rounded-full border border-zinc-200 px-2 py-0.5 text-xs text-zinc-500">
                     {m.contact_type}
@@ -160,18 +191,66 @@ export default function MembersClient() {
                     <span className="text-sm text-zinc-500">{m.contact_value}</span>
                   )}
                   <button
-                    onClick={() => toggle(m.id)}
+                    onClick={(e) => { e.stopPropagation(); startEdit(m); }}
                     className="text-xs text-zinc-400 hover:text-zinc-700"
                   >
-                    {expanded === m.id ? "hide" : "notes & history"}
+                    edit
                   </button>
                   <button
-                    onClick={() => remove(m.id)}
+                    onClick={(e) => { e.stopPropagation(); remove(m.id); }}
                     className="text-xs text-red-400 hover:text-red-600"
                   >
                     delete
                   </button>
                 </div>
+
+                {/* Edit form */}
+                {editing === m.id && (
+                  <div className="mt-3 border-t border-zinc-100 pt-3">
+                    <div className="flex flex-wrap gap-3">
+                      <input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && saveEdit(m.id)}
+                        placeholder="Name"
+                        onClick={(e) => e.stopPropagation()}
+                        className="min-w-[160px] flex-1 rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-400"
+                      />
+                      <select
+                        value={editContactType}
+                        onChange={(e) => setEditContactType(e.target.value as ContactType)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-400"
+                      >
+                        {CONTACT_TYPES.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        value={editContactValue}
+                        onChange={(e) => setEditContactValue(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && saveEdit(m.id)}
+                        placeholder="Contact value"
+                        onClick={(e) => e.stopPropagation()}
+                        className="min-w-[160px] flex-1 rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-400"
+                      />
+                      <button
+                        onClick={(e) => { e.stopPropagation(); saveEdit(m.id); }}
+                        className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setEditing(null); }}
+                        className="rounded-xl border border-zinc-200 px-4 py-2 text-sm text-zinc-500 hover:bg-zinc-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Expanded */}
                 {expanded === m.id && (
