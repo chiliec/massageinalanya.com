@@ -207,7 +207,7 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
 
   function changeTrack() {
     if (tracks.length < 2) return;
-    let next = currentTrack;
+    let next: string = currentTrack ?? tracks[0];
     while (next === currentTrack) {
       next = tracks[Math.floor(Math.random() * tracks.length)];
     }
