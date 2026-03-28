@@ -254,6 +254,15 @@ export default function AppointmentsClient() {
     return Array.from({ length: 7 }, (_, i) => shiftDay(date, i - 3));
   }, [date]);
 
+  // Current time indicator (updates every minute)
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  const isToday = date === todayStr();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
   // Which hours to show
   const earlyHours = ALL_HOURS.filter((h) => h < WORK_START);
   const workHours = ALL_HOURS.filter((h) => h >= WORK_START && h < WORK_END);
@@ -368,6 +377,7 @@ export default function AppointmentsClient() {
                   appointments={appointments}
                   onClickSlot={openDialogAt}
                   onDelete={remove}
+                  nowMinutes={isToday ? nowMinutes : undefined}
                 />
               ))}
               <button
@@ -387,6 +397,7 @@ export default function AppointmentsClient() {
               appointments={appointments}
               onClickSlot={openDialogAt}
               onDelete={remove}
+              nowMinutes={isToday ? nowMinutes : undefined}
             />
           ))}
 
@@ -411,6 +422,7 @@ export default function AppointmentsClient() {
                   appointments={appointments}
                   onClickSlot={openDialogAt}
                   onDelete={remove}
+                  nowMinutes={isToday ? nowMinutes : undefined}
                 />
               ))}
               <button
@@ -575,11 +587,13 @@ function TimelineSlot({
   appointments,
   onClickSlot,
   onDelete,
+  nowMinutes,
 }: {
   hour: number;
   appointments: Appointment[];
   onClickSlot: (hour: number) => void;
   onDelete: (id: string) => void;
+  nowMinutes?: number;
 }) {
   const slotStart = hour * 60;
   const slotEnd = slotStart + 60;
@@ -590,15 +604,31 @@ function TimelineSlot({
     return aptStart >= slotStart && aptStart < slotEnd;
   });
 
+  // Current time indicator in this slot
+  const showNowLine = nowMinutes !== undefined && nowMinutes >= slotStart && nowMinutes < slotEnd;
+  const nowTopPx = showNowLine ? ((nowMinutes! - slotStart) / 60) * SLOT_HEIGHT : 0;
+
   return (
     <div className="flex border-t border-zinc-100 first:border-t-0">
       {/* Hour label */}
-      <div className="w-14 shrink-0 py-3 pr-3 text-right font-mono text-xs text-zinc-400">
+      <div className="relative w-14 shrink-0 py-3 pr-3 text-right font-mono text-xs text-zinc-400">
         {pad(hour)}:00
+        {showNowLine && (
+          <div
+            className="absolute right-0 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-red-500"
+            style={{ top: nowTopPx }}
+          />
+        )}
       </div>
 
       {/* Slot content */}
       <div className="relative flex-1 overflow-visible" style={{ height: SLOT_HEIGHT }}>
+        {showNowLine && (
+          <div
+            className="pointer-events-none absolute left-0 right-0 z-20 border-t-2 border-red-500"
+            style={{ top: nowTopPx }}
+          />
+        )}
         {startsHere.map((apt) => {
           const aptStart = timeToMinutes(apt.start_time);
           const offsetMin = aptStart - slotStart;
