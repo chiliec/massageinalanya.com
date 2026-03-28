@@ -32,7 +32,7 @@ Copy values into `.env.local`:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-ADMIN_EMAIL=
+ADMIN_EMAILS=
 ```
 
 Optional:
@@ -77,7 +77,7 @@ Implemented from Figma design with these sections:
 
 - This repo uses Next.js 16 conventions. Read docs in `node_modules/next/dist/docs/` before framework-level changes.
 - Blog posts are stored in a local JSON file (`data/posts.json`), not a database. `data/*` is gitignored.
-- Admin access is controlled by matching the signed-in user email against `ADMIN_EMAIL`.
+- Admin access is controlled by matching the signed-in user email against `ADMIN_EMAILS` (comma-separated list).
 - `middleware.ts` handles auth/session work; Next.js 16 warns that `proxy.ts` is preferred going forward.
 
 ## Verification Status

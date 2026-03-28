@@ -10,7 +10,7 @@ Quick reminders:
 - Check `node_modules/next/dist/docs/` before changing framework behavior
 - Use `pnpm`
 - Public blog content is file-backed via `data/posts.json` / `POSTS_FILE_PATH`
-- Admin access is controlled by Supabase auth plus `ADMIN_EMAIL`; in dev, a cookie-based bypass is available via `lib/dev-auth.ts`
+- Admin access is controlled by Supabase auth plus `ADMIN_EMAILS` (comma-separated); in dev, a cookie-based bypass is available via `lib/dev-auth.ts`
 - `SUPABASE_SERVICE_ROLE_KEY` is required for appointments/members API routes (admin Supabase client)
 - Homepages exist for `en` (default), `ru`, and `fi` — translations live in `lib/i18n.ts`
 - Appointments and members are stored in Supabase PostgreSQL; migration at `supabase/migrations/001_appointments.sql`

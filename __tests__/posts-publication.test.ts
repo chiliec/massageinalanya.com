@@ -25,7 +25,7 @@ async function createTempPostsFile() {
 }
 
 beforeEach(async () => {
-  process.env.ADMIN_EMAIL = "admin@example.com";
+  process.env.ADMIN_EMAILS = "admin@example.com";
   process.env.POSTS_FILE_PATH = await createTempPostsFile();
   mockUser = null;
 });

@@ -37,6 +37,32 @@ function formatTime(seconds: number) {
   return `${pad(m)}:${pad(s)}`;
 }
 
+function trackName(path: string) {
+  const name = decodeURIComponent(path.split("/").pop() ?? "");
+  return name.replace(/\.mp3$/i, "");
+}
+
+function fadeOutAudio(audio: HTMLAudioElement, durationMs = 3000): Promise<void> {
+  return new Promise((resolve) => {
+    const startVolume = audio.volume;
+    const steps = 30;
+    const stepMs = durationMs / steps;
+    const decrement = startVolume / steps;
+    let step = 0;
+
+    const id = setInterval(() => {
+      step++;
+      audio.volume = Math.max(0, startVolume - decrement * step);
+      if (step >= steps) {
+        clearInterval(id);
+        audio.pause();
+        audio.volume = startVolume;
+        resolve();
+      }
+    }, stepMs);
+  });
+}
+
 export default function AppointmentDetail({ appointment }: { appointment: Appointment }) {
   const router = useRouter();
   const defaultSeconds = appointment.duration * 60;
@@ -54,8 +80,14 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
   const [remaining, setRemaining] = useState(defaultSeconds);
   const [tracks, setTracks] = useState<string[]>([]);
 
+  // Music player state
+  const [currentTrack, setCurrentTrack] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [volume, setVolume] = useState(0.7);
+
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const musicRef = useRef<HTMLAudioElement | null>(null);
+  const alarmRef = useRef<HTMLAudioElement | null>(null);
 
   function editedTotalSeconds() {
     return editHours * 3600 + editMinutes * 60;
@@ -67,10 +99,27 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
       .then(setTracks);
   }, []);
 
+  // Sync volume to audio element
+  useEffect(() => {
+    if (musicRef.current) {
+      musicRef.current.volume = volume;
+    }
+  }, [volume]);
+
   function endTimer() {
     clearInterval(intervalRef.current!);
-    musicRef.current?.pause();
+    setIsPlaying(false);
     setTimerState("ended");
+
+    // Fade out music
+    if (musicRef.current) {
+      fadeOutAudio(musicRef.current, 3000);
+    }
+
+    // Play alarm
+    const alarm = new Audio("/alarm.mp3");
+    alarm.play().catch(() => {});
+    alarmRef.current = alarm;
   }
 
   function startInterval() {
@@ -95,11 +144,14 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
       const track = tracks[Math.floor(Math.random() * tracks.length)];
       const audio = new Audio(track);
       audio.loop = true;
+      audio.volume = volume;
       audio.play().catch(() => {});
       musicRef.current = audio;
+      setCurrentTrack(track);
     } else {
       musicRef.current?.play().catch(() => {});
     }
+    setIsPlaying(true);
     startInterval();
     setTimerState("running");
   }
@@ -107,6 +159,7 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
   function pause() {
     clearInterval(intervalRef.current!);
     musicRef.current?.pause();
+    setIsPlaying(false);
     setTimerState("paused");
   }
 
@@ -115,13 +168,18 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
     return () => {
       clearInterval(intervalRef.current!);
       musicRef.current?.pause();
+      alarmRef.current?.pause();
     };
   }, []);
 
   function dismiss() {
     musicRef.current?.pause();
     musicRef.current = null;
+    alarmRef.current?.pause();
+    alarmRef.current = null;
     clearInterval(intervalRef.current!);
+    setIsPlaying(false);
+    setCurrentTrack(null);
     router.push("/admin/appointments");
   }
 
@@ -131,7 +189,20 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
     musicRef.current = null;
     const total = editedTotalSeconds();
     setRemaining(total);
+    setIsPlaying(false);
+    setCurrentTrack(null);
     setTimerState("idle");
+  }
+
+  function toggleMusic() {
+    if (!musicRef.current) return;
+    if (isPlaying) {
+      musicRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      musicRef.current.play().catch(() => {});
+      setIsPlaying(true);
+    }
   }
 
   const saveNotes = useCallback(async (val: string) => {
@@ -289,11 +360,37 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
           )}
         </div>
 
-        {timerState === "running" && (
-          <p className="mt-4 text-xs text-zinc-400">Music playing</p>
-        )}
-        {timerState === "paused" && (
-          <p className="mt-4 text-xs text-zinc-400">Paused</p>
+        {/* Music player */}
+        {currentTrack && (timerState === "running" || timerState === "paused") && (
+          <div className="mx-auto mt-6 flex max-w-sm items-center gap-3 rounded-2xl border border-zinc-100 bg-zinc-50 px-4 py-3">
+            <button
+              onClick={toggleMusic}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-white transition hover:bg-zinc-700"
+            >
+              {isPlaying ? (
+                <svg width="12" height="14" viewBox="0 0 12 14" fill="currentColor">
+                  <rect x="0" y="0" width="4" height="14" rx="1" />
+                  <rect x="8" y="0" width="4" height="14" rx="1" />
+                </svg>
+              ) : (
+                <svg width="12" height="14" viewBox="0 0 12 14" fill="currentColor">
+                  <polygon points="0,0 12,7 0,14" />
+                </svg>
+              )}
+            </button>
+            <p className="min-w-0 flex-1 truncate text-xs font-medium text-zinc-700">
+              {trackName(currentTrack)}
+            </p>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={volume}
+              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              className="w-20 accent-zinc-900"
+            />
+          </div>
         )}
       </section>
 

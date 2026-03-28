@@ -45,7 +45,7 @@ Tracked in `.env.example`:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`: required for the admin Supabase client (`lib/supabase/admin.ts`); bypasses RLS for server-side admin operations
-- `ADMIN_EMAIL`
+- `ADMIN_EMAILS`: comma-separated list of admin email addresses
 
 Also supported:
 
@@ -149,9 +149,9 @@ Notes:
 
 - Authentication uses Supabase Google OAuth with `@supabase/ssr`
 - In `NODE_ENV=development`, a dev-auth cookie (`dev-admin-session`) can substitute for real Supabase auth — set via `POST /auth/dev-login` and cleared via `POST /auth/dev-logout`; both routes are no-ops in production
-- Admin access is based only on email equality:
-  - `user.email?.toLowerCase() === process.env.ADMIN_EMAIL?.toLowerCase()`
-- `lib/admin-auth.ts` exports `requireAdmin()` — used by all API routes; checks Supabase session first, falls back to dev cookie in development; returns `NextResponse` with 401/403 on failure or `null` on success
+- Admin access is based on email membership in a comma-separated list:
+  - `ADMIN_EMAILS` env var holds allowed emails; `isAdminEmail()` in `lib/admin-auth.ts` checks membership
+- `lib/admin-auth.ts` exports `requireAdmin()` and `isAdminEmail()` — used by all API routes and admin pages; checks Supabase session first, falls back to dev cookie in development; returns `NextResponse` with 401/403 on failure or `null` on success
 - `middleware.ts` currently refreshes Supabase sessions and redirects unauthenticated `/admin*` requests to `/auth/login?next=...`
 - Authorization is re-checked inside server components and all `app/api/*` route handlers
 - Do not rely on middleware/proxy alone for admin authorization; keep server-side checks in place

@@ -4,6 +4,7 @@ import GoogleSignInButton from "./google-sign-in-button";
 import DevLoginButton from "./dev-login-button";
 import SignOutButton from "@/components/auth/sign-out-button";
 import { isDevMode, isDevAuthenticated } from "@/lib/dev-auth";
+import { isAdminEmail } from "@/lib/admin-auth";
 
 type LoginPageSearchParams = {
   next?: string | string[];
@@ -28,9 +29,7 @@ export default async function LoginPage({
     redirect("/admin");
   }
 
-  const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-  const userEmail = user?.email?.toLowerCase();
-  const isAdmin = Boolean(adminEmail && userEmail && userEmail === adminEmail);
+  const isAdmin = isAdminEmail(user?.email);
 
   if (user && isAdmin) {
     redirect("/admin");
@@ -45,8 +44,7 @@ export default async function LoginPage({
           </p>
           <h1 className="mt-4 text-3xl font-semibold">Sign in</h1>
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-            Only <span className="font-medium">{adminEmail ?? "the configured admin"}</span>{" "}
-            can access the admin section.
+            Only configured admin accounts can access this section.
           </p>
 
           <div className="mt-8 space-y-4">

@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isDevMode, isDevAuthenticated } from "@/lib/dev-auth";
+import { isAdminEmail } from "@/lib/admin-auth";
 import AppointmentDetail from "@/components/admin/appointment-detail";
 
 export default async function AppointmentPage({
@@ -21,9 +22,7 @@ export default async function AppointmentPage({
     redirect(`/auth/login?next=/admin/appointments/${id}`);
   }
 
-  const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-  const userEmail = user?.email?.toLowerCase();
-  const isAdmin = devAuth || Boolean(adminEmail && userEmail && userEmail === adminEmail);
+  const isAdmin = devAuth || isAdminEmail(user?.email);
 
   if (!isAdmin) {
     return (

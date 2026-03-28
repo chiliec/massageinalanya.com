@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createPost, type EditorContent } from "@/lib/posts";
-import { isDevAuthenticated, isDevMode } from "@/lib/dev-auth";
+import { requireAdmin } from "@/lib/admin-auth";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -19,28 +18,8 @@ function isEditorContent(value: unknown): value is EditorContent {
 }
 
 export async function POST(request: Request) {
-  const devAuth = isDevMode() && (await isDevAuthenticated());
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user && !devAuth) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-  const userEmail = user?.email?.toLowerCase();
-  const isAdmin = devAuth || Boolean(adminEmail && userEmail && adminEmail === userEmail);
-
-  if (!adminEmail && !devAuth) {
-    return NextResponse.json({ error: "ADMIN_EMAIL is not configured." }, { status: 500 });
-  }
-
-  if (!isAdmin) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const denied = await requireAdmin();
+  if (denied) return denied;
 
   let payload: unknown;
   try {

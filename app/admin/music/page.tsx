@@ -2,9 +2,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isDevMode, isDevAuthenticated } from "@/lib/dev-auth";
 import { isAdminEmail } from "@/lib/admin-auth";
-import AppointmentsClient from "@/components/admin/appointments-client";
+import MusicClient from "@/components/admin/music-client";
 
-export default async function AdminAppointmentsPage() {
+export default async function AdminMusicPage() {
   const devAuth = isDevMode() && (await isDevAuthenticated());
   const supabase = await createClient();
   const {
@@ -12,7 +12,7 @@ export default async function AdminAppointmentsPage() {
   } = await supabase.auth.getUser();
 
   if (!user && !devAuth) {
-    redirect("/auth/login?next=/admin/appointments");
+    redirect("/auth/login?next=/admin/music");
   }
 
   const isAdmin = devAuth || isAdminEmail(user?.email);
@@ -33,13 +33,13 @@ export default async function AdminAppointmentsPage() {
         <header className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">Admin</p>
           <div className="mt-4 flex items-center justify-between gap-4">
-            <h1 className="text-3xl font-semibold">Appointments</h1>
+            <h1 className="text-3xl font-semibold">Music</h1>
             <a href="/admin" className="text-sm text-zinc-500 hover:text-zinc-900">
               ← Dashboard
             </a>
           </div>
         </header>
-        <AppointmentsClient />
+        <MusicClient />
       </main>
     </div>
   );

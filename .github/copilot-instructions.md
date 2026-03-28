@@ -9,7 +9,7 @@ Critical reminders for this codebase:
 - Use `pnpm`
 - Tailwind is v4 and configured from `app/globals.css`, not a traditional `tailwind.config.*`
 - Blog posts are file-backed through `lib/posts.ts` and `data/posts.json`
-- Admin auth uses Supabase Google OAuth and `ADMIN_EMAIL`
+- Admin auth uses Supabase Google OAuth and `ADMIN_EMAILS` (comma-separated)
 - `middleware.ts` works today but Next 16 warns that `proxy.ts` is the forward-looking file convention
 
 When in doubt, follow `AGENTS.md`.

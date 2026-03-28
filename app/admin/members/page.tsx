@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isDevMode, isDevAuthenticated } from "@/lib/dev-auth";
+import { isAdminEmail } from "@/lib/admin-auth";
 import MembersClient from "@/components/admin/members-client";
 
 export default async function AdminMembersPage() {
@@ -14,9 +15,7 @@ export default async function AdminMembersPage() {
     redirect("/auth/login?next=/admin/members");
   }
 
-  const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-  const userEmail = user?.email?.toLowerCase();
-  const isAdmin = devAuth || Boolean(adminEmail && userEmail && userEmail === adminEmail);
+  const isAdmin = devAuth || isAdminEmail(user?.email);
 
   if (!isAdmin) {
     return (

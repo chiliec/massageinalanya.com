@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/auth/sign-out-button";
 import { isDevMode, isDevAuthenticated } from "@/lib/dev-auth";
+import { isAdminEmail } from "@/lib/admin-auth";
 
 export default async function AdminPage() {
   const devAuth = isDevMode() && (await isDevAuthenticated());
@@ -16,9 +17,7 @@ export default async function AdminPage() {
     redirect("/auth/login?next=/admin");
   }
 
-  const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-  const userEmail = user?.email?.toLowerCase();
-  const isAdmin = devAuth || Boolean(adminEmail && userEmail && userEmail === adminEmail);
+  const isAdmin = devAuth || isAdminEmail(user?.email);
 
   if (!isAdmin) {
     return (
@@ -30,8 +29,7 @@ export default async function AdminPage() {
           <h1 className="mt-4 text-3xl font-semibold">Access denied</h1>
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
             Signed in as <span className="font-medium">{user?.email ?? "unknown"}</span>.
-            Only <span className="font-medium">{adminEmail ?? "the configured admin"}</span>{" "}
-            can view this page.
+            Only configured admin accounts can view this page.
           </p>
           <div className="mt-6">
             <SignOutButton label="Sign out" />
@@ -89,6 +87,13 @@ export default async function AdminPage() {
             >
               <p className="font-semibold">Appointments</p>
               <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Calendar, session timer, music player</p>
+            </Link>
+            <Link
+              href="/admin/music"
+              className="rounded-2xl border border-dashed border-zinc-200 p-4 text-sm font-medium text-zinc-700 transition hover:border-zinc-300 hover:text-zinc-900 dark:border-zinc-800 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:text-zinc-50"
+            >
+              <p className="font-semibold">Music</p>
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Upload and manage session music</p>
             </Link>
             {/* <Link
               href="/admin/posts"

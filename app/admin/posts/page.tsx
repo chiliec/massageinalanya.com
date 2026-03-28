@@ -5,6 +5,7 @@ import SignOutButton from "@/components/auth/sign-out-button";
 import PostEditor from "@/components/posts/post-editor";
 import { listPosts } from "@/lib/posts";
 import { isDevMode, isDevAuthenticated } from "@/lib/dev-auth";
+import { isAdminEmail } from "@/lib/admin-auth";
 
 function formatDate(value: string) {
   const date = new Date(value);
@@ -24,9 +25,7 @@ export default async function AdminPostsPage() {
     redirect("/auth/login?next=/admin/posts");
   }
 
-  const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-  const userEmail = user?.email?.toLowerCase();
-  const isAdmin = devAuth || Boolean(adminEmail && userEmail && userEmail === adminEmail);
+  const isAdmin = devAuth || isAdminEmail(user?.email);
 
   if (!isAdmin) {
     return (
@@ -38,8 +37,7 @@ export default async function AdminPostsPage() {
           <h1 className="mt-4 text-3xl font-semibold">Access denied</h1>
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
             Signed in as <span className="font-medium">{user?.email ?? "unknown"}</span>.
-            Only <span className="font-medium">{adminEmail ?? "the configured admin"}</span>{" "}
-            can view this page.
+            Only configured admin accounts can view this page.
           </p>
           <div className="mt-6">
             <SignOutButton label="Sign out" />
