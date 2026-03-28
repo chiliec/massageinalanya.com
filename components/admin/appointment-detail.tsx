@@ -205,6 +205,21 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
     }
   }
 
+  function changeTrack() {
+    if (tracks.length < 2) return;
+    let next = currentTrack;
+    while (next === currentTrack) {
+      next = tracks[Math.floor(Math.random() * tracks.length)];
+    }
+    musicRef.current?.pause();
+    const audio = new Audio(next);
+    audio.loop = true;
+    audio.volume = volume;
+    if (isPlaying) audio.play().catch(() => {});
+    musicRef.current = audio;
+    setCurrentTrack(next);
+  }
+
   const saveNotes = useCallback(async (val: string) => {
     await fetch("/api/appointments", {
       method: "PATCH",
@@ -381,6 +396,18 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
             <p className="min-w-0 flex-1 truncate text-xs font-medium text-zinc-700">
               {trackName(currentTrack)}
             </p>
+            {tracks.length >= 2 && (
+              <button
+                onClick={changeTrack}
+                title="Next track"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-200 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                  <polygon points="0,0 8,6 0,12" />
+                  <rect x="9" y="0" width="3" height="12" rx="0.5" />
+                </svg>
+              </button>
+            )}
             <input
               type="range"
               min="0"
