@@ -10,6 +10,15 @@ interface Member {
   name: string;
   contact_type: string;
   contact_value: string;
+  notes: string;
+}
+
+interface PastAppointment {
+  id: string;
+  date: string;
+  start_time: string;
+  duration: number;
+  notes: string;
 }
 
 interface Appointment {
@@ -79,6 +88,7 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
   const [timerState, setTimerState] = useState<TimerState>("idle");
   const [remaining, setRemaining] = useState(defaultSeconds);
   const [tracks, setTracks] = useState<string[]>([]);
+  const [pastAppointments, setPastAppointments] = useState<PastAppointment[]>([]);
 
   // Music player state
   const [currentTrack, setCurrentTrack] = useState<string | null>(null);
@@ -98,6 +108,19 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
       .then((r) => r.json())
       .then(setTracks);
   }, []);
+
+  useEffect(() => {
+    if (!appointment.member_id) return;
+    fetch("/api/appointments", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "member_notes", member_id: appointment.member_id }),
+    })
+      .then((r) => r.json())
+      .then((data: PastAppointment[]) =>
+        setPastAppointments(data.filter((a) => a.id !== appointment.id))
+      );
+  }, [appointment.member_id, appointment.id]);
 
   // Sync volume to audio element
   useEffect(() => {
@@ -421,15 +444,55 @@ export default function AppointmentDetail({ appointment }: { appointment: Appoin
         )}
       </section>
 
+      {/* Member notes */}
+      {appointment.members?.notes && (
+        <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-400">
+            Member notes
+          </p>
+          <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-700">
+            {appointment.members.notes}
+          </p>
+        </section>
+      )}
+
       {/* Notes */}
-      <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm space-y-5">
         <AutoSaveNotes
-          label="Session notes"
+          label="Current session notes"
           value={appointment.notes}
           placeholder="Notes for this session…"
           rows={4}
           onSave={saveNotes}
         />
+
+        {pastAppointments.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-400">
+              Previous appointments ({pastAppointments.length})
+            </p>
+            <div className="mt-3 space-y-2">
+              {pastAppointments.map((pa) => (
+                <Link
+                  key={pa.id}
+                  href={`/admin/appointments/${pa.id}`}
+                  className="block rounded-xl border border-zinc-100 p-3 transition hover:bg-zinc-50"
+                >
+                  <div className="mb-1 flex items-center gap-2 text-xs text-zinc-400">
+                    <span>{pa.date}</span>
+                    <span>·</span>
+                    <span>{pa.start_time.slice(0, 5)}</span>
+                    <span>·</span>
+                    <span>{pa.duration} min</span>
+                  </div>
+                  {pa.notes && (
+                    <p className="text-sm text-zinc-700">{pa.notes}</p>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );

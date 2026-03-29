@@ -109,9 +109,12 @@ export default function MembersClient() {
   async function toggle(id: string) {
     if (expanded === id) {
       setExpanded(null);
+      setEditing(null);
       return;
     }
     setExpanded(id);
+    const m = members.find((m) => m.id === id);
+    if (m) startEdit(m);
     if (!aptNotes[id]) {
       const res = await fetch("/api/appointments", {
         method: "PUT",
@@ -191,12 +194,6 @@ export default function MembersClient() {
                     <span className="text-sm text-zinc-500">{m.contact_value}</span>
                   )}
                   <button
-                    onClick={(e) => { e.stopPropagation(); startEdit(m); }}
-                    className="text-xs text-zinc-400 hover:text-zinc-700"
-                  >
-                    edit
-                  </button>
-                  <button
                     onClick={(e) => { e.stopPropagation(); remove(m.id); }}
                     className="text-xs text-red-400 hover:text-red-600"
                   >
@@ -204,9 +201,10 @@ export default function MembersClient() {
                   </button>
                 </div>
 
-                {/* Edit form */}
-                {editing === m.id && (
-                  <div className="mt-3 border-t border-zinc-100 pt-3">
+                {/* Expanded */}
+                {expanded === m.id && (
+                  <div className="mt-3 space-y-4 border-t border-zinc-100 pt-3">
+                    {/* Edit form */}
                     <div className="flex flex-wrap gap-3">
                       <input
                         value={editName}
@@ -242,19 +240,7 @@ export default function MembersClient() {
                       >
                         Save
                       </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setEditing(null); }}
-                        className="rounded-xl border border-zinc-200 px-4 py-2 text-sm text-zinc-500 hover:bg-zinc-50"
-                      >
-                        Cancel
-                      </button>
                     </div>
-                  </div>
-                )}
-
-                {/* Expanded */}
-                {expanded === m.id && (
-                  <div className="mt-3 space-y-4 border-t border-zinc-100 pt-3">
                     <AutoSaveNotes
                       key={m.id}
                       label="Notes"
@@ -265,7 +251,7 @@ export default function MembersClient() {
 
                     <div>
                       <label className="mb-2 block text-xs text-zinc-400">
-                        Appointment history
+                        Appointment history{aptNotes[m.id] && aptNotes[m.id].length > 0 ? ` (${aptNotes[m.id].length})` : ""}
                       </label>
                       {!aptNotes[m.id] ? (
                         <p className="text-xs text-zinc-400">Loading…</p>
