@@ -536,7 +536,7 @@ export default function AppointmentsClient() {
                   checked={form.skip_cleanup}
                   onChange={(e) => setForm((f) => ({ ...f, skip_cleanup: e.target.checked }))}
                 />
-                Skip 15 min cleanup
+                Skip 15 min break after session
               </label>
 
               {/* Conflict warning */}
